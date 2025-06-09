@@ -569,7 +569,16 @@ static void runexe(char *prog_name)
 
 
 #ifdef ATARICLONE
-    ret = callatr(mycmdline, &os, entry_point);
+    /* this is not ideal, and will presumably need a
+       command.exe test eventually too */
+    if (strstr(prog_name, "pcomm") != NULL)
+    {
+        ret = pgastart(&os);
+    }
+    else
+    {
+        ret = callatr(mycmdline, &os, entry_point);
+    }
 #else
 
     if (salone)
