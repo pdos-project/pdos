@@ -448,7 +448,7 @@ static FILE *handtofile(int handle)
     }
     else
     {
-        fp = __userFiles[handle - 2];
+        fp = __userFiles[handle - 3];
     }
     return (fp);
 }
