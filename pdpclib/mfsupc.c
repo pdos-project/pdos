@@ -144,7 +144,7 @@ int __vserun(void)
 
 #ifdef __BIGFOOT__
 
-/* C startup code for MVS */
+/* C startup code for Linux Bigfoot */
 
 int __bigrun(void)
 {
