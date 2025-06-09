@@ -230,13 +230,13 @@ int exeloadDoload(unsigned char **entry_point,
                                          fp,
                                          (unsigned char **)loadloc);
 #endif
-#if NEED_VSE
-    if (ret == 1) ret = exeloadLoadVSE((unsigned char **)entry_point,
+#if NEED_MVS
+    if (ret == 1) ret = exeloadLoadMVS((unsigned char **)entry_point,
                                        fp,
                                        (unsigned char **)loadloc);
 #endif
-#if NEED_MVS
-    if (ret == 1) ret = exeloadLoadMVS((unsigned char **)entry_point,
+#if NEED_VSE
+    if (ret == 1) ret = exeloadLoadVSE((unsigned char **)entry_point,
                                        fp,
                                        (unsigned char **)loadloc);
 #endif
