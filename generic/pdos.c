@@ -431,9 +431,8 @@ static long atariTrap1(short cnt, void *s_in)
 {
     int opcode;
 
-    printf("got trap1\n");
     opcode = *(short *)s_in;
-    printf("opcode is %d\n", opcode);
+    /* printf("opcode is %d\n", opcode); */
     if (opcode == 64)
     {
         struct { short opcode;
