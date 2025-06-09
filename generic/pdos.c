@@ -427,6 +427,32 @@ static int service_call(int svcnum, void *a, void *b)
 
 
 #ifdef ATARICLONE
+
+extern FILE *__userFiles[__NFILE];
+
+static FILE *handtofile(int handle)
+{
+    FILE *fp;
+
+    if (handle == 0)
+    {
+        fp = stdin;
+    }
+    else if (handle == 1)
+    {
+        fp = stdout;
+    }
+    else if (handle == 2)
+    {
+        fp = stderr;
+    }
+    else
+    {
+        fp = __userFiles[handle - 2];
+    }
+    return (fp);
+}
+
 static long atariTrap1(short cnt, void *s_in)
 {
     int opcode;
@@ -440,7 +466,7 @@ static long atariTrap1(short cnt, void *s_in)
                  long count;
                  void *buf; } *s = (void *)s_in;
 
-        fwrite(s->buf, 1, s->count, stdout);
+        fwrite(s->buf, 1, s->count, handtofile(s->handle));
     }
     else if (opcode == 72)
     {
