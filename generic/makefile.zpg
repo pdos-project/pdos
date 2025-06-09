@@ -3,12 +3,14 @@
 
 # PDOS386 should be renamed to PDOSGENOS
 
+# BIGFOOT is currently incompatible as it forces ASCII
+
 CC=gccmvs
 AS=as370 -mhlasm -mebcdic
 COPTS=-S -Os -fno-common -U__MVS__ -D__MF32__ -D__PDOS386__ \
     -D__NOBIVA__ -I . -I../pdpclib -I../src -I../bios -DNEED_MVS \
     -DUSE_MEMMGR -DDONT_MM -fno-builtin -DEBCDIC -DNEED_VSE \
-    -DNEED_ELF -DNEED_BIGFOOT \
+    -DNEED_ELF -DXNEED_BIGFOOT \
     -I../hwzip
 
 OBJ=genstart.o pdos.o ..\bios\exeload.o \
