@@ -1,14 +1,16 @@
-# This builds a PDOS-generic executable for the Amiga 68020
+# This builds a PDOS-generic executable for the Amiga 68000
 # No need to build a library, this is self-contained
 
 CC=gccami
-COPTS=-S -O2 -U__AMIGA__ -DHAVE_DIR -D__PDOS386__ -D__PDOSGEN__ -D__AMIGEN__ -D__NOBIVA__ -I . -I../pdpclib -I../src
+COPTS=-S -O2 -U__AMIGA__ -DHAVE_DIR -D__PDOS386__ \
+    -D__PDOSGEN__ -D__AMIGEN__ -D__NOBIVA__ \
+    -DNEED_UNDMAIN -I . -I../pdpclib -I../src
 
 all: clean pcomm.exe
 
-pcomm.exe: ../pdpclib/pgastart.o pcomm.o
+pcomm.exe: ../pdpclib/pgastart.o ../pdpclib/string.o pcomm.o
   rm -f pcomm.exe
-  ldami -s -N -e ___crt0 -o pcomm.exe ../pdpclib/pgastart.o pcomm.o
+  ldami -s -N -e ___crt0 -o pcomm.exe ../pdpclib/pgastart.o ../pdpclib/string.o pcomm.o
 
 .c.o:
   $(CC) $(COPTS) -o $*.s $<
