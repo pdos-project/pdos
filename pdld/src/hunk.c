@@ -18,6 +18,184 @@
 #include "hunk.h"
 #include "xmalloc.h"
 
+#define CEIL_TO_LONGWORDS(value) (ALIGN (value, 4) / 4)
+
+address_type amiga_get_base_address (void)
+{    
+    return 0;
+}
+
+static size_t section_get_relocs_size (const struct section *section)
+{
+    struct section_part *part;
+    size_t num_relocs = 0;
+    size_t num_hunks = 0;
+    const struct section *old_target_section = NULL;
+    
+    for (part = section->first_part; part; part = part->next) {
+        size_t i;
+        
+        for (i = 0; i < part->relocation_count; i++) {
+            if (part->relocation_array[i].howto == &reloc_howtos[RELOC_TYPE_32]) {
+                struct symbol *symbol = part->relocation_array[i].symbol;
+                if (symbol_is_undefined (symbol)) {
+                    symbol = symbol_find (symbol->name);
+                }
+                /* Skips absolute and similar symbols. */
+                if (!symbol->part) continue;
+
+                if (symbol->part->section != old_target_section) {
+                    old_target_section = symbol->part->section;
+                    num_hunks++;
+                }
+                
+                {
+                    /* For this format, OS can load sections anywhere,
+                     * so section RVAs are irrelevant
+                     * and must be removed from the relocated fields
+                     * so OS can add custom section VAs to the fields.
+                     */
+                    unsigned long field4;
+                    bytearray_read_4_bytes (&field4, part->content + part->relocation_array[i].offset, BIG_ENDIAN);
+                    field4 -= symbol->part->section->rva;
+                    bytearray_write_4_bytes (part->content + part->relocation_array[i].offset, field4, BIG_ENDIAN);
+                    
+                }
+                num_relocs++;
+            }
+        }
+    }
+
+    if (!num_relocs) return 0;
+
+    return 4 + num_hunks * 8 + num_relocs * 4 + 4;
+}
+
+static unsigned char *write_relocs_for_section (unsigned char *file,
+                                                unsigned char *pos,
+                                                const struct section *section)
+{
+    struct section_part *part;
+    size_t num_relocs = 0;
+    const struct section *old_target_section = NULL;
+    unsigned char *saved_pos = NULL;
+
+    for (part = section->first_part; part; part = part->next) {
+        size_t i;
+        
+        for (i = 0; i < part->relocation_count; i++) {
+            if (part->relocation_array[i].howto == &reloc_howtos[RELOC_TYPE_32]) {
+                struct symbol *symbol = part->relocation_array[i].symbol;
+                if (symbol_is_undefined (symbol)) {
+                    symbol = symbol_find (symbol->name);
+                }
+                /* Skips absolute and similar symbols. */
+                if (!symbol->part) continue;
+
+                if (!old_target_section) {
+                    bytearray_write_4_bytes (pos, HUNK_RELOC32, BIG_ENDIAN);
+                    pos += 4;
+                }
+
+                if (symbol->part->section != old_target_section) {
+                    if (saved_pos) {
+                        bytearray_write_4_bytes (saved_pos, num_relocs, BIG_ENDIAN);
+                        bytearray_write_4_bytes (saved_pos + 4, old_target_section->target_index, BIG_ENDIAN);
+                    }
+                    old_target_section = symbol->part->section;
+                    num_relocs = 0;
+                    saved_pos = pos;
+                    pos += 8;
+                }
+                
+                bytearray_write_4_bytes (pos, part->rva - part->section->rva + part->relocation_array[i].offset, BIG_ENDIAN);
+                pos += 4;
+                num_relocs++;
+            }
+        }
+    }
+
+    if (saved_pos) {
+        bytearray_write_4_bytes (saved_pos, num_relocs, BIG_ENDIAN);
+        bytearray_write_4_bytes (saved_pos + 4, old_target_section->target_index, BIG_ENDIAN);
+    }
+
+    if (old_target_section) pos += 4;
+
+    return pos;
+}
+
+void amiga_write (const char *filename)
+{
+    FILE *outfile;
+    unsigned char *file;
+    size_t file_size;
+    unsigned char *pos;
+
+    struct section *section;
+    size_t header_size;
+    size_t i;
+    size_t num_sections = section_count ();
+
+    if (!(outfile = fopen (filename, "wb"))) {
+        ld_error ("cannot open '%s' for writing", filename);
+        return;
+    }
+
+    header_size = 5 * 4 + num_sections * 4;
+    file_size = header_size;
+    for (section = all_sections, i = 0; section; section = section->next) {
+        file_size += 2 * 4;
+        if (!section->is_bss) {
+            file_size += ALIGN (section->total_size, 4);
+            file_size += section_get_relocs_size (section);
+        }
+        section->target_index = i++;
+    }
+    file_size += 4;
+
+    file = xcalloc (file_size, 1);
+
+    pos = file;
+    bytearray_write_4_bytes (pos, HUNK_HEADER, BIG_ENDIAN);
+    bytearray_write_4_bytes (pos + 8, num_sections, BIG_ENDIAN);
+    bytearray_write_4_bytes (pos + 12, 0, BIG_ENDIAN);
+    bytearray_write_4_bytes (pos + 16, num_sections ? num_sections - 1 : 0, BIG_ENDIAN);
+    pos += 20;
+    for (section = all_sections; section; section = section->next) {
+        if (!section->is_bss) {
+            bytearray_write_4_bytes (pos, CEIL_TO_LONGWORDS (section->total_size), BIG_ENDIAN);
+        }
+        pos += 4;
+    }
+
+    for (section = all_sections; section; section = section->next) {
+        if (section->is_bss) {
+            bytearray_write_4_bytes (pos, HUNK_BSS, BIG_ENDIAN);
+        } else if (section->flags & SECTION_FLAG_CODE) {
+            bytearray_write_4_bytes (pos, HUNK_CODE, BIG_ENDIAN);
+        } else {
+            bytearray_write_4_bytes (pos, HUNK_DATA, BIG_ENDIAN);
+        }
+        bytearray_write_4_bytes (pos + 4, CEIL_TO_LONGWORDS (section->total_size), BIG_ENDIAN);
+        pos += 8;
+        if (!section->is_bss) {
+            section_write (section, pos);
+            pos += ALIGN (section->total_size, 4);
+            pos = write_relocs_for_section (file, pos, section);
+        }
+    }
+
+    bytearray_write_4_bytes (pos, HUNK_END, BIG_ENDIAN);
+
+    if (fwrite (file, file_size, 1, outfile) != 1) {
+        ld_error ("writing '%s' file failed", filename);
+    }
+    
+    free (file);
+    fclose (outfile);
+}
+
 #define CHECK_READ(memory_position, size_to_read) \
     do { if (((memory_position) - file + (size_to_read) > file_size) \
              || (memory_position) < file) ld_fatal_error ("corrupted input file"); } while (0)

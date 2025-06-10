@@ -18,6 +18,7 @@
 #define HUNK_EXT 0x3EF
 
 #define HUNK_END 0x3F2
+#define HUNK_HEADER 0x3F3
 
 #define EXT_SYMB 0
 #define EXT_DEF 1

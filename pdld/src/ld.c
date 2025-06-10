@@ -61,7 +61,9 @@ int main (int argc, char **argv)
 
     if (ld_state->oformat == LD_OFORMAT_COFF) coff_after_link ();
     
-    if (ld_state->oformat == LD_OFORMAT_AOUT) {
+    if (ld_state->oformat == LD_OFORMAT_AMIGA) {
+        amiga_write (ld_state->output_filename);
+    } else if (ld_state->oformat == LD_OFORMAT_AOUT) {
         aout_write (ld_state->output_filename);
     } else if (ld_state->oformat == LD_OFORMAT_ATARI) {
         atari_write (ld_state->output_filename);

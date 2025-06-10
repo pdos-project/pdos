@@ -100,6 +100,7 @@ enum ld_target_machine {
 };
 
 enum ld_oformat {
+    LD_OFORMAT_AMIGA,
     LD_OFORMAT_AOUT,
     LD_OFORMAT_ATARI,
     LD_OFORMAT_BINARY,
@@ -380,6 +381,8 @@ void elf_write (const char *filename);
 int elf_read (unsigned char *file, size_t file_size, const char *filename);
 
 /* hunk.c */
+address_type amiga_get_base_address (void);
+void amiga_write (const char *filename);
 int hunk_read (unsigned char *file, size_t file_size, const char *filename);
 
 /* lx.c */
