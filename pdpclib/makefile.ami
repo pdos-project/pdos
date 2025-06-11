@@ -2,7 +2,8 @@
 
 CC=gccami
 AR=arami
-LD=ldami
+LD=pdld --oformat amiga
+#LD=ldami
 AS=asami
 COPTS=-m68000 -S -O2 -D__AMIGA__ -D__NOBIVA__ -I. -I../amiga -fno-common \
     -DNEEDDIV
