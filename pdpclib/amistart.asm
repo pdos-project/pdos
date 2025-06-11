@@ -57,6 +57,18 @@ ___exita:
         move.l  savedSP,sp
         rts
 
+# This dummy data exists to force pdld to put the data section
+# before the BSS section. The intention is that the loader code
+# (exeload.c) should be changed to allow the BSS to appear before
+# the data, and also for the loading to be done in a way that the
+# executable in memory matches the map produced by pdld. Until
+# that is done, this workaround is being used, and the data and
+# BSS do not match the map. And the BSS is currently not being
+# cleared either, so that needs to be fixed too. And the executable
+# is constrained to be 1 MB - that needs to be fixed too.
+.data
+.long 0xCAFECAFE
+
         .bss
 savedSP:
         .skip 4
