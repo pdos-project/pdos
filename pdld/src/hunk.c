@@ -18,6 +18,8 @@
 #include "hunk.h"
 #include "xmalloc.h"
 
+int reading_archive;
+
 #define CEIL_TO_LONGWORDS(value) (ALIGN (value, 4) / 4)
 
 address_type amiga_get_base_address (void)
@@ -204,11 +206,13 @@ static int estimate (unsigned char *file,
                      size_t file_size,
                      const char *filename,
                      size_t *num_hunks_p,
-                     size_t *num_symbols_p)
+                     size_t *num_symbols_p,
+                     unsigned char **end_pos_p)
 {
     unsigned char *pos;
     size_t num_hunks = 0;
     size_t num_symbols = 0;
+    int import = 0;
     
     {
         /* HUNK_UNIT contains the object name, so it needs to be skipped. */
@@ -232,7 +236,12 @@ static int estimate (unsigned char *file,
         bytearray_read_4_bytes (&type, pos, BIG_ENDIAN);
         pos += 4;
 
-        if (type == HUNK_UNIT) break;
+        if (type == HUNK_UNIT) {
+            pos -= 4;
+            *end_pos_p = pos;
+            reading_archive = 1;
+            break;
+        }
 
         if (type == HUNK_END) {
             num_hunks++;
@@ -255,6 +264,24 @@ static int estimate (unsigned char *file,
                 name_size &= 0xffffff;
                 name_size *= 4;
 
+                if (symbol_type == EXT_DEF) {
+                    /* Objects from archives should be imported
+                     * only if they define known undefined symbols
+                     * but as it is impossible to know whether a file is archive
+                     * or just one object until first object is completely read,
+                     * this check is done for single objects too but the result is ignored.
+                     */
+                    char *name;
+                    const struct symbol *symbol;
+                    
+                    CHECK_READ (pos, name_size);
+                    name = xstrndup ((char *)pos, name_size);
+                    symbol = symbol_find (name);
+
+                    if (symbol && symbol_is_undefined (symbol)) import = 1;
+                    
+                    free (name);
+                }
                 pos += name_size;
 
                 if (symbol_type == EXT_DEF
@@ -332,6 +359,11 @@ static int estimate (unsigned char *file,
                 break;
         }
     }
+
+    if (reading_archive && !import) {
+        *num_hunks_p = 0;
+        return 0;
+    }
     
     *num_hunks_p = num_hunks;
     *num_symbols_p = num_symbols;
@@ -363,8 +395,12 @@ static int read_hunk_object (unsigned char *file,
      * and symbols are there without parsing whole file,
      * so the file is parsed twice.
      */
-    estimate (file, file_size, filename, &num_hunks, &num_symbols);
-    if (num_hunks == 0) return 0;
+    *end_pos_p = NULL;
+    estimate (file, file_size, filename, &num_hunks, &num_symbols, end_pos_p);
+    if (num_hunks == 0) {
+        if (*end_pos_p) return 3;
+        return 0;
+    }
 
     if (ld_state->target_machine == LD_TARGET_MACHINE_M68K
         || ld_state->target_machine == LD_TARGET_MACHINE_UNKNOWN) {
@@ -766,23 +802,39 @@ int hunk_read (unsigned char *file, size_t file_size, const char *filename)
     bytearray_read_4_bytes (&Magic, file, BIG_ENDIAN);
 
     if (Magic == HUNK_UNIT) {
-        unsigned char *new_pos;
+        unsigned char *saved_file = file;
+        size_t saved_file_size = file_size;
+        int change;
+
+        reading_archive = 0;
 
         /* Hunk archives are just multiple object files
          * starting with HUNK_UNIT merged into a single file,
-         * so keep reading the file until end is encountered.
+         * so keep reading the file until end is encountered
+         * and repeat from beginning until no more object files
+         * need to be imported.
          */
-        while (1) {
-            int ret = read_hunk_object (file, file_size, filename, &new_pos);
-            if (ret == 1) {
-                return INPUT_FILE_ERROR;
-            } else if (ret == 2) {
-                file_size -= new_pos - file;
-                file = new_pos;
-                continue;
-            }        
-            return INPUT_FILE_FINISHED;
-        }
+        do {
+            change = 0;
+            
+            while (1) {
+                unsigned char *new_pos;
+                int ret = read_hunk_object (file, file_size, filename, &new_pos);
+                if (ret == 1) {
+                    return INPUT_FILE_ERROR;
+                } else if (ret >= 2) {
+                    if (ret == 2) change = 1;
+                    file_size -= new_pos - file;
+                    file = new_pos;
+                    continue;
+                }        
+                if (reading_archive) break;
+                return INPUT_FILE_FINISHED;
+            }
+            
+            file = saved_file;
+            file_size = saved_file_size;
+        } while (reading_archive && change);
     } else {
         return INPUT_FILE_UNRECOGNIZED;
     }
