@@ -1,7 +1,8 @@
 # This builds Amiga hunk executables for Amiga OS 68000
 
 CC=gccami
-AR=arami
+AR=xar
+#AR=arami
 LD=pdld --oformat amiga
 #LD=ldami
 AS=asami
@@ -15,6 +16,7 @@ pdptest.exe: amistart.o pdptest.o stdio.o string.o stdlib.o \
   $(AR) r amiga.a stdio.o string.o stdlib.o
   $(AR) r amiga.a start.o time.o errno.o assert.o signal.o locale.o
   $(AR) r amiga.a ctype.o setjmp.o math.o amisupa.o fpfuncsa.o
+  $(AR) s amiga.a
   $(LD) -s -nostdlib -o pdptest.exe amistart.o pdptest.o amiga.a
 
 .c.o:
