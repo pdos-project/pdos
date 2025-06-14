@@ -220,6 +220,12 @@ configuration to test PDOS.
 
 raread/rawrite (unknown origin)
 
+info-zip zip is available at:
+ftp://ftp.info-zip.org/pub/infozip/win32/zip300xn.zip
+https://web.archive.org/web/20230115084431/ftp://ftp.info-zip.org/pub/infozip/win32/zip300xn.zip
+
+info-zip unzip, unknown origin
+
 GCC 3.2.3 to do cross-compile from Windows:
 https://sourceforge.net/projects/pdos/files/pdwdev/pdwdev-rel1.zip/download
 refer to gccdos.txt for documentation
