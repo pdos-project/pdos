@@ -7343,6 +7343,10 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
         stream->endbuf = stream->fbuf + stream->szfbuf;
         stream->justseeked = 0;
     }
+    if (stream->update)
+    {
+        iread(stream, &dptr);
+    }
     switch (stream->style)
     {
         case FIXED_BINARY:
