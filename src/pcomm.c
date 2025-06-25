@@ -2695,7 +2695,7 @@ void safegets(char *buffer, int size, bool use_history)
             else if (!iscntrl((unsigned char)a))
             {
                 /*Allow the user to enter (MAX_COMMAND_BUF - 1) characters.*/
-                if ((pos < MAX_COMMAND_BUF - 1) && (i < MAX_COMMAND_BUF - 1)) {
+                if (i < MAX_COMMAND_BUF - 1) {
                     putch(a);
                     memmove(buffer+pos+1, buffer+pos, i-pos+1);
                     buffer[pos] = a;
