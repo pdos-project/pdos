@@ -2633,9 +2633,6 @@ void safegets(char *buffer, int size, bool use_history)
                 continue;
             }
             if (a == LEFT_ARROW) {
-                
-                if (i > 0) i--;
-                
                 if (pos > 0) {
                     putch('\b');
                     pos--;
@@ -2643,7 +2640,6 @@ void safegets(char *buffer, int size, bool use_history)
                 continue;
             }
             if (a == RIGHT_ARROW) {
-                if (i < MAX_COMMAND_BUF - 1) i++;
                 if (pos < i) {
                     putch(buffer[pos]);
                     pos++;
@@ -2699,7 +2695,7 @@ void safegets(char *buffer, int size, bool use_history)
             else if (!iscntrl((unsigned char)a))
             {
                 /*Allow the user to enter (MAX_COMMAND_BUF - 1) characters.*/
-                if (pos < MAX_COMMAND_BUF - 1) {
+                if ((pos < MAX_COMMAND_BUF - 1) && (i < MAX_COMMAND_BUF - 1)) {
                     putch(a);
                     memmove(buffer+pos+1, buffer+pos, i-pos+1);
                     buffer[pos] = a;
