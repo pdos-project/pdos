@@ -2633,6 +2633,9 @@ void safegets(char *buffer, int size, bool use_history)
                 continue;
             }
             if (a == LEFT_ARROW) {
+                
+                if (i > 0) i--;
+                
                 if (pos > 0) {
                     putch('\b');
                     pos--;
@@ -2640,6 +2643,7 @@ void safegets(char *buffer, int size, bool use_history)
                 continue;
             }
             if (a == RIGHT_ARROW) {
+                if (i < MAX_COMMAND_BUF - 1) i++;
                 if (pos < i) {
                     putch(buffer[pos]);
                     pos++;
