@@ -1,0 +1,61 @@
+# This is the new standard for Win68k
+# It produces an msvcrt.dll that allows you to run a
+# subset of Win32 executables
+
+# You should have run makek32.m68 in src first
+
+CC=gccami
+#CC=gccwin_l64 -D__LONG64__
+AR=xar
+AS=asami
+LD=pdld
+COPTS=-S -fno-common -ansi -O2 -D__WIN32__ -D__PDPCLIB_DLL \
+    -D__NOBIVA__ -I . -I ../src -D__M68K__ \
+    -D__NODECLSPEC__ -D__NOSTDCALL__ -m68000 -DNEEDDIV
+
+
+ifeq "$(tgtchs)" "ebcdic"
+COPTS:=$(COPTS) -funsigned-char
+endif
+
+
+all: pdptest.exe
+
+pdptest.exe: w32start.obj pdptest.obj stdio.obj string.obj stdlib.obj \
+       start.obj time.obj errno.obj assert.obj signal.obj locale.obj \
+       ctype.obj setjmp.obj math.obj dllcrt.obj fpfuncsa.obj amisupa.obj
+  rm -f temp.lib
+  $(AR) r temp.lib stdio.obj string.obj stdlib.obj
+  $(AR) r temp.lib start.obj time.obj errno.obj assert.obj signal.obj
+  $(AR) r temp.lib locale.obj ctype.obj setjmp.obj math.obj
+  $(AR) s temp.lib
+  $(LD) -s --implib-compat --no-insert-timestamp -o msvcrt.dll --shared --out-implib msvcrt.lib dllcrt.obj amisupa.obj fpfuncsa.obj temp.lib ../src/kernel32.lib
+  rm -f temp.lib
+  $(LD) -s -nostdlib --no-insert-timestamp -o pdptest.exe w32start.obj pdptest.obj msvcrt.lib amisupa.obj fpfuncsa.obj setjmp.obj
+
+w32start.obj: w32start.c
+  $(CC) -S -O2 -D__WIN32__ -m68000 -D__NODECLSPEC__ -D__NOSTDCALL__ -D__M68K__ -I . -I ../src -o $*.s $*.c
+  $(AS) -o $*.obj $*.s
+  rm -f $*.s
+
+pdptest.obj: pdptest.c
+  $(CC) -S -O2 -D__WIN32__ -m68000 -D__NODECLSPEC__ -D__NOSTDCALL__ -D__M68K__ -I . -I ../src -o $*.s $*.c
+  $(AS) -o $*.obj $*.s
+  rm -f $*.s
+
+dllcrt.obj: dllcrt.c
+  $(CC) $(COPTS) -D__EXPORT__ -DNEED_START -m68000 -D__NODECLSPEC__ -D__NOSTDCALL__ -D__M68K__ -o $*.s $*.c
+  $(AS) -o $*.obj $*.s
+  rm -f $*.s
+
+.c.obj:
+  $(CC) $(COPTS) -o $*.s $<
+  $(AS) -o $*.obj $*.s
+  rm -f $*.s
+
+.asm.obj:
+  $(AS) -o $@ $<
+
+clean:
+  rm -f *.obj
+  rm -f pdptest.exe
