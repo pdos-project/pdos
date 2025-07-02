@@ -28,7 +28,7 @@ OBJS=pdossupc.obj pos.obj string.obj
 all: clean kernel32.dll
 
 kernel32.dll: $(EXPORT_OBJS) $(OBJS)
-  $(LD) -s -o kernel32.dll --shared --kill-at --out-implib kernel32.lib $(EXPORT_OBJS) $(OBJS)
+  $(LD) -s -o kernel32.dll --export-all-symbols --shared --kill-at --out-implib kernel32.lib $(EXPORT_OBJS) $(OBJS)
 
 dllcrt.obj: ../pdpclib/dllcrt.c
   $(CC) $(COPTS) -D__EXPORT__ -o $*.s $<
