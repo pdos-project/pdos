@@ -44,7 +44,13 @@
 #define __int64 long long
 
 #define APIENTRY WINAPI
+
+#ifdef __NOSTDCALL__
+#define CALLBACK
+#else
 #define CALLBACK __stdcall
+#endif
+
 #define CONST const
 #define VOID void
 
@@ -723,7 +729,7 @@ BOOL WINAPI GetNumberOfConsoleMouseButtons(LPDWORD lpd);
 HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
 
 #ifndef __SUBC__
-typedef BOOL (__stdcall *PHANDLER_ROUTINE)(DWORD CtrlType);
+typedef BOOL (CALLBACK *PHANDLER_ROUTINE)(DWORD CtrlType);
 #endif
 
 #define ReadConsoleInput ReadConsoleInputA
