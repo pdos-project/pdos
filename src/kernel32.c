@@ -26,7 +26,7 @@ static DWORD lasterr = 0;
 
 /* We don't actually use kernel32.dll so we just have dummy
    routines to get a clean link for ARM */
-#ifdef __ARM__
+#if defined(__ARM__) || defined(__M68K__)
 void int86(void) {}
 void int86x(void) {}
 #endif
