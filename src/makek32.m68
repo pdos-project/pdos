@@ -1,0 +1,54 @@
+# Released to the public domain.
+#
+# Anyone and anything may copy, edit, publish,
+# use, compile, sell and distribute this work
+# and all its parts in any form for any purpose,
+# commercial and non-commercial, without any restrictions,
+# without complying with any conditions
+# and by any means.
+
+# This is for Windows 32-bit 68000
+
+# Note that we don't expect to actually use the result of
+# this, so we don't have Pos calls implemented.
+
+VPATH=../pdpclib
+
+CC=gccami
+CFLAGS=-O2 -ansi
+COPTS=$(CFLAGS) -S -m68000 -D__M68K__ -D__WIN32__ \
+    -fno-leading-underscore -I ../pdpclib -I . -DNOLIBALLOC \
+    -D__NODECLSPEC__ -D__NOSTDCALL__
+AS=asami
+LD=pdld
+
+EXPORT_OBJS=dllcrt.obj kernel32.obj
+OBJS=pdossupc.obj pos.obj string.obj
+
+all: clean kernel32.dll
+
+kernel32.dll: $(EXPORT_OBJS) $(OBJS)
+  $(LD) -s -o kernel32.dll --shared --kill-at --out-implib kernel32.lib $(EXPORT_OBJS) $(OBJS)
+
+dllcrt.obj: ../pdpclib/dllcrt.c
+  $(CC) $(COPTS) -D__EXPORT__ -o $*.s $<
+  $(AS) -o $@ $*.s
+  rm -f $*.s
+
+kernel32.obj: kernel32.c
+  $(CC) $(COPTS) -D__EXPORT__ -o $*.s $<
+  $(AS) -o $@ $*.s
+  rm -f $*.s
+
+.c.obj:
+  $(CC) $(COPTS) -D__32BIT__ -o $*.s $<
+  $(AS) -o $@ $*.s
+  rm -f $*.s
+
+.asm.obj:
+  asprm -o $@ -f coff $<
+
+clean:
+  rm -f *.obj
+  rm -f kernel32.dll
+  rm -f kernel32.lib
