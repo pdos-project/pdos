@@ -324,6 +324,7 @@ __PDPCLIB_API__ __DUMMYFILE _iob[3];
 /* It doesn't appear to exist on Windows 2000 (32 bit) -
    dodged a bullet there */
 #if defined(__64BIT__) \
+    || defined(__M68K__) \
     || (defined(__ARM__) && (defined(__GENSHELL__) || defined(__WIN32__)))
 __PDPCLIB_API__ __DUMMYFILE *__iob_func(void)
 {
