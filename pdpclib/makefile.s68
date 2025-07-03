@@ -11,7 +11,7 @@ AS=asami
 LD=pdld
 COPTS=-S -fno-common -ansi -O2 -D__WIN32__ -D__PDPCLIB_DLL \
     -D__NOBIVA__ -I . -I ../src -D__M68K__ \
-    -D__NODECLSPEC__ -D__NOSTDCALL__ -m68000 -DNEEDDIV
+    -D__NODECLSPEC__ -m68000 -DNEEDDIV
 
 
 ifeq "$(tgtchs)" "ebcdic"
@@ -29,9 +29,9 @@ pdptest.exe: w32start.obj pdptest.obj stdio.obj string.obj stdlib.obj \
   $(AR) r temp.lib start.obj time.obj errno.obj assert.obj signal.obj
   $(AR) r temp.lib locale.obj ctype.obj setjmp.obj math.obj
   $(AR) s temp.lib
-  $(LD) -s --implib-compat --no-insert-timestamp -o msvcrt.dll --shared --out-implib msvcrt.lib dllcrt.obj amisupa.obj fpfuncsa.obj temp.lib ../src/kernel32.lib
+  $(LD) -s --implib-compat --export-all-symbols --no-insert-timestamp -o msvcrt.dll --shared --out-implib msvcrt.lib dllcrt.obj amisupa.obj fpfuncsa.obj temp.lib ../src/kernel32.lib
   rm -f temp.lib
-  $(LD) -s -nostdlib --no-insert-timestamp -o pdptest.exe w32start.obj pdptest.obj msvcrt.lib amisupa.obj fpfuncsa.obj setjmp.obj
+  $(LD) -s -nostdlib --no-insert-timestamp -o pdptest.exe w32start.obj pdptest.obj amisupa.obj fpfuncsa.obj setjmp.obj msvcrt.lib
 
 w32start.obj: w32start.c
   $(CC) -S -O2 -D__WIN32__ -m68000 -D__NODECLSPEC__ -D__NOSTDCALL__ -D__M68K__ -I . -I ../src -o $*.s $*.c
