@@ -17,8 +17,8 @@ VPATH=../pdpclib
 CC=gccami
 CFLAGS=-O2 -ansi
 COPTS=$(CFLAGS) -S -m68000 -D__M68K__ -D__WIN32__ \
-    -fno-leading-underscore -I ../pdpclib -I . -DNOLIBALLOC \
-    -D__NODECLSPEC__ -D__NOSTDCALL__
+    -I ../pdpclib -I . -DNOLIBALLOC \
+    -D__NODECLSPEC__
 AS=asami
 LD=pdld
 
