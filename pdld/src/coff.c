@@ -138,6 +138,11 @@ unsigned long coff_get_SizeOfStackCommit (void)
 static int check_Machine (unsigned short Machine, const char *filename)
 {
     switch (Machine) {
+        /* Some machines do not have their own Machine value yet
+         * and use IMAGE_FILE_MACHINE_UNKNOWN instead.
+         */
+        case IMAGE_FILE_MACHINE_UNKNOWN: return 0;
+        
         case IMAGE_FILE_MACHINE_AMD64:
             if (ld_state->target_machine == LD_TARGET_MACHINE_X64
                 || ld_state->target_machine == LD_TARGET_MACHINE_UNKNOWN) {
