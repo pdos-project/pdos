@@ -12,7 +12,7 @@
 
 #include <stddef.h>
 
-#ifdef __ARM__
+#if defined(__ARM__) || defined(__M68K__)
 #define __stdcall
 #endif
 
@@ -44,12 +44,7 @@
 #define __int64 long long
 
 #define APIENTRY WINAPI
-
-#ifdef __NOSTDCALL__
-#define CALLBACK
-#else
 #define CALLBACK __stdcall
-#endif
 
 #define CONST const
 #define VOID void
