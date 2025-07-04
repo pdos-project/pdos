@@ -2800,6 +2800,22 @@ static int exeloadLoadELF(unsigned char **entry_point,
 #endif /* ifndef __64BIT__ */
 #endif
 
+#ifdef NEEDCBIG
+#define flip2(a) \
+    ( \
+     (((a) & 0xff) << 8) \
+     | (((a) & 0xff00) >> 8) \
+    )
+
+#define flip4(a) \
+    ( \
+     (((a) & 0xff) << 24UL) \
+     | (((a) & 0xff00) << 8UL) \
+     | (((a) & 0xff0000UL) >> 8) \
+     | (((a) & 0xff000000UL) >> 24) \
+    )
+#endif
+
 #if NEED_MZ
 static int exeloadLoadMZ(unsigned char **entry_point,
                          FILE *fp,
@@ -2825,6 +2841,10 @@ static int exeloadLoadMZ(unsigned char **entry_point,
         return (1);
     }
 
+#ifdef NEEDCBIG
+    firstbit.header_size = flip2(firstbit.header_size);
+#endif
+
     if (firstbit.header_size == 0)
     {
         printf("MZ Header has 0 size\n");
@@ -2837,6 +2857,7 @@ static int exeloadLoadMZ(unsigned char **entry_point,
         int discard;
 
         discard = firstbit.header_size * 16 - sizeof(firstbit);
+
 #if 0
         printf("MZ Header is too large, size: %u\n",
                (unsigned int)firstbit.header_size * 16);
@@ -2868,6 +2889,10 @@ static int exeloadLoadMZ(unsigned char **entry_point,
             return (2);
         }
     }
+
+#ifdef NEEDCBIG
+    firstbit.e_lfanew = flip4(firstbit.e_lfanew);
+#endif
 
     /* Determines whether the executable has extensions or is a pure MZ.
      * Extensions are at offset in e_lfanew,
@@ -3220,6 +3245,14 @@ static int exeloadLoadPE(unsigned char **entry_point,
         printf("Error occured while reading COFF header\n");
         return (2);
     }
+
+#ifdef NEEDCBIG
+    coff_hdr.Machine = flip2(coff_hdr.Machine);
+    coff_hdr.Characteristics = flip2(coff_hdr.Characteristics);
+    coff_hdr.SizeOfOptionalHeader = flip2(coff_hdr.SizeOfOptionalHeader);
+    coff_hdr.NumberOfSections = flip2(coff_hdr.NumberOfSections);
+#endif
+
 #if TARGET_64BIT && !SHIMCM32
     if ((coff_hdr.Machine != IMAGE_FILE_MACHINE_AMD64)
         && (coff_hdr.Machine != IMAGE_FILE_MACHINE_ARM64))
@@ -3263,6 +3296,16 @@ static int exeloadLoadPE(unsigned char **entry_point,
         free(optional_hdr);
         return (2);
     }
+
+#ifdef NEEDCBIG
+    optional_hdr->Magic = flip2(optional_hdr->Magic);
+    optional_hdr->SizeOfImage = flip4(optional_hdr->SizeOfImage);
+    optional_hdr->ImageBase
+        = (void *)flip4((unsigned long)optional_hdr->ImageBase);
+    optional_hdr->NumberOfRvaAndSizes = flip4(optional_hdr->NumberOfRvaAndSizes);
+    optional_hdr->AddressOfEntryPoint = flip4(optional_hdr->AddressOfEntryPoint);
+#endif
+
 #if TARGET_64BIT && !SHIMCM32
     if (optional_hdr->Magic != MAGIC_PE32PLUS)
     {
@@ -3333,6 +3376,12 @@ static int exeloadLoadPE(unsigned char **entry_point,
     {
         /* Virtual size of a section is larger than in file,
          * so the difference is filled with 0. */
+#ifdef NEEDCBIG
+        section->VirtualSize = flip4(section->VirtualSize);
+        section->VirtualAddress = flip4(section->VirtualAddress);
+        section->SizeOfRawData = flip4(section->SizeOfRawData);
+        section->PointerToRawData = flip4(section->PointerToRawData);
+#endif
         if (section->VirtualSize > section->SizeOfRawData)
         {
             memset(exeStart
@@ -3368,11 +3417,17 @@ static int exeloadLoadPE(unsigned char **entry_point,
             /* Difference between preferred address and real address. */
             ptrdiff_t image_diff;
             int lower_exeStart;
-            Base_relocation_block *rel_block = ((Base_relocation_block *)
-                                                (exeStart
-                                                 + (data_dir
-                                                    ->VirtualAddress)));
+            Base_relocation_block *rel_block;
             Base_relocation_block *end_rel_block;
+
+#ifdef NEEDCBIG
+            data_dir->VirtualAddress = flip4(data_dir->VirtualAddress);
+            data_dir->Size = flip4(data_dir->Size);
+#endif
+
+            rel_block = ((Base_relocation_block *)
+                         (exeStart
+                          + (data_dir->VirtualAddress)));
 
             if ((unsigned char *)(ptrdiff_t)optional_hdr->ImageBase > exeStart)
             {
@@ -3400,6 +3455,10 @@ static int exeloadLoadPE(unsigned char **entry_point,
                 unsigned short *cur_rel = (unsigned short *)rel_block;
                 unsigned short *end_rel;
 
+#ifdef NEEDCBIG
+                rel_block->BlockSize = flip4(rel_block->BlockSize);
+                rel_block->PageRva = flip4(rel_block->PageRva);
+#endif
                 end_rel = (cur_rel
                            + ((rel_block->BlockSize)
                               / sizeof(unsigned short)));
@@ -3524,12 +3583,22 @@ static int exeloadLoadPE(unsigned char **entry_point,
         IMAGE_DATA_DIRECTORY *data_dir = (((IMAGE_DATA_DIRECTORY *)
                                            (optional_hdr + 1))
                                           + DATA_DIRECTORY_IMPORT_TABLE);
+#ifdef NEEDCBIG
+        data_dir->VirtualAddress = flip4(data_dir->VirtualAddress);
+        data_dir->Size = flip4(data_dir->Size);
+#endif
         if (data_dir->Size != 0)
         {
             IMAGE_IMPORT_DESCRIPTOR *import_desc = ((void *)
                                                     (exeStart
                                                      + (data_dir
                                                         ->VirtualAddress)));
+
+#ifdef NEEDCBIG
+            import_desc->OriginalFirstThunk
+                = flip4(import_desc->OriginalFirstThunk);
+            import_desc->FirstThunk = flip4(import_desc->FirstThunk);
+#endif
 
             /* Each descriptor is for one DLL
              * and the array has a null terminator. */
@@ -3638,6 +3707,9 @@ STDTHUNKLIST
                      *thunk != 0;
                      thunk++)
                 {
+#ifdef NEEDCBIG
+                    *thunk = flip4(*thunk);
+#endif
                     if ((*thunk) & 0x80000000UL)
                     {
                         /* Bit 31 set, import by ordinal. */
@@ -3712,10 +3784,13 @@ STDTHUNKLIST
                         {
                             *thunk = (unsigned long)exit;
                         }
+#if !defined(__M68K__)
                         else if (strcmp((char *)hintname, "_iob") == 0)
                         {
                             *thunk = (unsigned long)_imp___iob;
                         }
+#endif
+
 #endif
                         else
                         {
