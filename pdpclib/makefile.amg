@@ -5,7 +5,8 @@ AR=arami
 LD=ldami
 AS=asami
 COPTS=-S -O2 -m68000 -D__PDOS386__ -U__AMIGA__ -D__AMIGEN__ -DNOLIBALLOC \
-    -D__NOBIVA__ -I. -I../src -DNEEDDIV -DUSE_MEMMGR -D__M68K__
+    -D__NOBIVA__ -I. -I../src -DNEEDDIV -DUSE_MEMMGR -D__M68K__ \
+    -DWINNEWMOD
 
 pdptest.exe: stdio.o string.o stdlib.o fpfuncsa.o \
        start.o time.o errno.o assert.o signal.o locale.o \
