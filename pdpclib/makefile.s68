@@ -31,7 +31,7 @@ pdptest.exe: w32start.obj pdptest.obj stdio.obj string.obj stdlib.obj \
   $(AR) s temp.lib
   $(LD) -s --implib-compat --export-all-symbols --no-insert-timestamp -o msvcrt.dll --shared --out-implib msvcrt.lib dllcrt.obj amisupa.obj fpfuncsa.obj temp.lib ../src/kernel32.lib
   rm -f temp.lib
-  $(LD) -s -nostdlib --no-insert-timestamp -o pdptest.exe w32start.obj pdptest.obj amisupa.obj fpfuncsa.obj setjmp.obj msvcrt.lib
+  $(LD) -s -nostdlib --no-insert-timestamp --emit-relocs -o pdptest.exe w32start.obj pdptest.obj amisupa.obj fpfuncsa.obj setjmp.obj msvcrt.lib
 
 w32start.obj: w32start.c
   $(CC) -S -O2 -D__WIN32__ -m68000 -D__NODECLSPEC__ -D__NOSTDCALL__ -D__M68K__ -I . -I ../src -o $*.s $*.c
