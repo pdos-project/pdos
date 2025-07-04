@@ -13,9 +13,11 @@ AS=asami
 AR=arami
 COPTS=-S $(CFLAGS) -ansi -I. -I../bios -I../pdpclib -I../src \
     -U__WIN32__ -D__PDOS386__ -DNOLIBALLOC -D__NOBIVA__ -DNEED_AMIGA \
-    -DNEED_ATARI -DATARICLONE \
+    -DNEED_ATARI -DXATARICLONE \
     -DUSE_MEMMGR -DDONT_MM \
-    -U__AMIGA__ -D__M68K__
+    -U__AMIGA__ -D__M68K__ \
+    -DNEED_MZ -DNO_DLLENTRY -DNEEDCBIG -DWINNEWMOD \
+    -D__NODECLSPEC__
 
 all: clean pdos.exe
 
