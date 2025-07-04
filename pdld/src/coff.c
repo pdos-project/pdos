@@ -2658,7 +2658,16 @@ static void import_generate_import (const char *import_name,
         part = section_part_new (section, of);
         section_append_section_part (section, part);
 
-        if (ld_state->target_machine == LD_TARGET_MACHINE_ARM) {
+        if (ld_state->target_machine == LD_TARGET_MACHINE_I386
+            || ld_state->target_machine == LD_TARGET_MACHINE_X64) {
+            part->content_size = 8;
+            part->content = xmalloc (part->content_size);
+            memcpy (part->content,
+                    "\xFF\x25\x00\x00\x00\x00" /* jmp dword ptr [0] */
+                    "\x90" /* nop */
+                    "\x90" /* nop */,
+                    8);
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_ARM) {
             part->content_size = 12;
             part->content = xmalloc (part->content_size);
 
@@ -2685,10 +2694,28 @@ static void import_generate_import (const char *import_name,
                     "\x10\x02\x40\xF9" /* ldr x16, [x16, #0x0] */
                     "\x00\x02\x1F\xD6" /* br x16 */,
                     12);
-        } else {
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_M68K) {
             part->content_size = 8;
             part->content = xmalloc (part->content_size);
-            memcpy (part->content, "\xFF\x25\x00\x00\x00\x00\x90\x90", 8);
+            memcpy (part->content,
+                    "\x2F\x39\x00\x00\x00\x00" /* move.l 0.l,-(sp) */
+                    "\x4E\x75"                 /* rts */
+                    /* (unused) "\x4E\x71" */  /* nop */,
+                    8);
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_MAINFRAME) {
+            part->content_size = 12;
+            part->content = xmalloc (part->content_size);
+            memcpy (part->content,
+                                       /* USING *,15 */
+                    "\x58\xF0\xF0\x08" /* L R15,XXX */
+                    "\x07\xFF"         /* BR R15 */
+                    "\x07\x00"         /* NOPR R0 */
+                    "\x00\x00\x00\x00" /* XXX DC F'0'*/,
+                    12);
+        } else {
+            ld_internal_error_at_source (__FILE__, __LINE__,
+                                         "generating PE/COFF import stubs is not yet supported for machine: %i",
+                                         ld_state->target_machine);
         }
 
         symbol->name = xstrdup (import_name);
@@ -2702,7 +2729,13 @@ static void import_generate_import (const char *import_name,
         part->relocation_array = xcalloc (part->relocation_count, sizeof *part->relocation_array);
         relocs = part->relocation_array;
         relocs[0].symbol = &of->symbol_array[0];
-        if (ld_state->target_machine == LD_TARGET_MACHINE_ARM) {
+        if (ld_state->target_machine == LD_TARGET_MACHINE_X64) {
+            relocs[0].howto = &reloc_howtos[RELOC_TYPE_PC32];
+            relocs[0].offset = 2;
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_I386) {
+            relocs[0].howto = &reloc_howtos[RELOC_TYPE_32];
+            relocs[0].offset = 2;
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_ARM) {
             if (arm_thumb_mode) {
                 relocs[0].howto = &reloc_howtos[RELOC_TYPE_ARM_THUMB_MOV32];
             } else {
@@ -2715,12 +2748,12 @@ static void import_generate_import (const char *import_name,
             relocs[1].symbol = &of->symbol_array[0];
             relocs[1].howto = &reloc_howtos[RELOC_TYPE_AARCH64_LDST64_ABS_LO12_NC];
             relocs[1].offset = 4;
-        } else if (ld_state->target_machine == LD_TARGET_MACHINE_X64) {
-            relocs[0].howto = &reloc_howtos[RELOC_TYPE_PC32];
-            relocs[0].offset = 2;
-        } else {
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_M68K) {
             relocs[0].howto = &reloc_howtos[RELOC_TYPE_32];
             relocs[0].offset = 2;
+        } else if (ld_state->target_machine == LD_TARGET_MACHINE_MAINFRAME) {
+            relocs[0].howto = &reloc_howtos[RELOC_TYPE_32];
+            relocs[0].offset = 8;
         }
     }
     
