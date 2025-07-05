@@ -17,7 +17,7 @@ COPTS=-S $(CFLAGS) -ansi -I. -I../bios -I../pdpclib -I../src \
     -DUSE_MEMMGR -DDONT_MM \
     -U__AMIGA__ -D__M68K__ \
     -DNEED_MZ -DNO_DLLENTRY -DNEEDCBIG -DWINNEWMOD \
-    -D__NODECLSPEC__
+    -D__NODECLSPEC__ -D__W32EMUL__
 
 all: clean pdos.exe
 
