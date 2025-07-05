@@ -3,10 +3,10 @@
 
 CC=gccami
 CFLAGS=-O2
-LD=ldami
+LD=pdld --oformat amiga
 LDFLAGS=
 AS=asami
-AR=arami
+AR=xar
 COPTS=-S $(CFLAGS) -m68000 -ansi -I../pdpclib -I../src -D__AMIGA__ \
     -D__NOBIVA__ -DNEED_AMIGA -fno-common
 
