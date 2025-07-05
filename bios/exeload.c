@@ -3708,18 +3708,11 @@ STDTHUNKLIST
                 unsigned long *thunk;
 
                 salone = 1;
-#ifdef NEEDCBIG
-                printf("xxx firstthunk before %x\n", import_desc->FirstThunk);
-                import_desc->FirstThunk = flip4(import_desc->FirstThunk);
-#endif
 
                 for (thunk = (void *)(exeStart + (import_desc->FirstThunk));
                      *thunk != 0;
                      thunk++)
                 {
-#ifdef NEEDCBIG
-                    *thunk = flip4(*thunk);
-#endif
                     if ((*thunk) & 0x80000000UL)
                     {
                         /* Bit 31 set, import by ordinal. */
