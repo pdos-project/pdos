@@ -89,6 +89,7 @@ struct coff_header_file {
 #define     IMAGE_FILE_MACHINE_ARMNT                        0x1c4
 #define     IMAGE_FILE_MACHINE_I386                         0x14c
 #define     IMAGE_FILE_MACHINE_THUMB                        0x1c2
+#define     IMAGE_FILE_MACHINE_M68K                         0x268
 
 #define     IMAGE_FILE_RELOCS_STRIPPED                      0x0001
 #define     IMAGE_FILE_EXECUTABLE_IMAGE                     0x0002

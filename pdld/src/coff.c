@@ -186,6 +186,17 @@ static int check_Machine (unsigned short Machine, const char *filename)
             }
             break;
 
+        case IMAGE_FILE_MACHINE_M68K:
+            if (ld_state->target_machine == LD_TARGET_MACHINE_M68K
+                || ld_state->target_machine == LD_TARGET_MACHINE_UNKNOWN) {
+                ld_state->target_machine = LD_TARGET_MACHINE_M68K;
+            } else {
+                ld_error ("%s: Machine field mismatch between objects", filename);
+                return 1;
+            }
+            leading_underscore = 1;
+            break;
+
         default:
             ld_error ("%s: unrecognized Machine %#x", filename, Machine);
             return 1;
@@ -215,6 +226,7 @@ static unsigned short get_Machine (void)
             }
         
         case LD_TARGET_MACHINE_AARCH64: return IMAGE_FILE_MACHINE_ARM64;
+        case LD_TARGET_MACHINE_M68K: return IMAGE_FILE_MACHINE_M68K;
 
         default: return IMAGE_FILE_MACHINE_UNKNOWN;
     }
@@ -921,6 +933,9 @@ void coff_before_link (void)
          */
         ld_warn ("base address must be a multiple of 64 KiB (0x10000) according to the specification");
     }
+
+    /* If no COFF objects were used as input, leading_underscore must be checked here. */
+    check_Machine (get_Machine (), "INTERNAL");
 
     if (export_all_symbols) export_all_generate_names ();
 
