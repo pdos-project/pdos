@@ -3477,10 +3477,6 @@ static int exeloadLoadPE(unsigned char **entry_point,
                     rel_target = (exeStart + (rel_block->PageRva)
                                         + ((*cur_rel) & 0x0fff));
 
-#ifdef NEEDCBIG
-                    *(unsigned long *)rel_target
-                        = flip4(*(unsigned long *)rel_target);
-#endif
                     if (rel_type == IMAGE_REL_BASED_ABSOLUTE) continue;
                     if (rel_type == IMAGE_REL_BASED_HIGHLOW)
                     {
@@ -3735,6 +3731,10 @@ STDTHUNKLIST
                          * so they are skipped to get the name. */
                         hintname += 2;
                         /* printf("hintname is X%sX\n", hintname); */
+#if defined(__M68K__)
+                        /* skip leading underscore */
+                        hintname++;
+#endif
                         ti = 0;
                         while (thunkarr[ti].name != NULL)
                         {
@@ -3787,6 +3787,12 @@ STDTHUNKLIST
                         {
                             *thunk = (unsigned long)exit;
                         }
+#if defined(__M68K__)
+                        else if (strcmp(hintname, "__iob_func") == 0)
+                        {
+                            *thunk = (unsigned long)__iob_func;
+                        }
+#endif
 #if !defined(__M68K__)
                         else if (strcmp((char *)hintname, "_iob") == 0)
                         {
