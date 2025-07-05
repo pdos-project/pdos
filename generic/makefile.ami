@@ -5,6 +5,9 @@
 # This is expected to run under the pseudobios produced
 # by makefile.l6g
 
+# By default this also runs theoretical Win32 68000
+# applications built by pdpclib/makefile.s68
+
 CC=gccami
 CFLAGS=-O2
 LD=ldami

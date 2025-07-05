@@ -2,7 +2,7 @@
 # to run PDOS-generic apps (or OS), not Amiga apps
 # Links against C library produced by makefile.l68
 
-# makefile.ami is the PDOS-generic OS
+# generic/makefile.ami is the PDOS-generic OS
 # makecomm.ami is a PDOS-generic app
 
 
