@@ -3731,10 +3731,6 @@ STDTHUNKLIST
                          * so they are skipped to get the name. */
                         hintname += 2;
                         /* printf("hintname is X%sX\n", hintname); */
-#if defined(__M68K__)
-                        /* skip leading underscore */
-                        hintname++;
-#endif
                         ti = 0;
                         while (thunkarr[ti].name != NULL)
                         {
