@@ -3467,10 +3467,20 @@ static int exeloadLoadPE(unsigned char **entry_point,
                 for (; cur_rel < end_rel; cur_rel++)
                 {
                     /* Top 4 bits indicate the type of relocation. */
-                    unsigned char rel_type = (unsigned char)((*cur_rel) >> 12);
-                    unsigned char *rel_target = (exeStart + (rel_block->PageRva)
+                    unsigned char rel_type;
+                    unsigned char *rel_target;
+
+#ifdef NEEDCBIG
+                    *cur_rel = flip2(*cur_rel);
+#endif
+                    rel_type = (unsigned char)((*cur_rel) >> 12);
+                    rel_target = (exeStart + (rel_block->PageRva)
                                         + ((*cur_rel) & 0x0fff));
 
+#ifdef NEEDCBIG
+                    *(unsigned long *)rel_target
+                        = flip4(*(unsigned long *)rel_target);
+#endif
                     if (rel_type == IMAGE_REL_BASED_ABSOLUTE) continue;
                     if (rel_type == IMAGE_REL_BASED_HIGHLOW)
                     {
@@ -3587,18 +3597,13 @@ static int exeloadLoadPE(unsigned char **entry_point,
         data_dir->VirtualAddress = flip4(data_dir->VirtualAddress);
         data_dir->Size = flip4(data_dir->Size);
 #endif
+
         if (data_dir->Size != 0)
         {
             IMAGE_IMPORT_DESCRIPTOR *import_desc = ((void *)
                                                     (exeStart
                                                      + (data_dir
                                                         ->VirtualAddress)));
-
-#ifdef NEEDCBIG
-            import_desc->OriginalFirstThunk
-                = flip4(import_desc->OriginalFirstThunk);
-            import_desc->FirstThunk = flip4(import_desc->FirstThunk);
-#endif
 
             /* Each descriptor is for one DLL
              * and the array has a null terminator. */
@@ -3703,6 +3708,11 @@ STDTHUNKLIST
                 unsigned long *thunk;
 
                 salone = 1;
+#ifdef NEEDCBIG
+                printf("xxx firstthunk before %x\n", import_desc->FirstThunk);
+                import_desc->FirstThunk = flip4(import_desc->FirstThunk);
+#endif
+
                 for (thunk = (void *)(exeStart + (import_desc->FirstThunk));
                      *thunk != 0;
                      thunk++)
