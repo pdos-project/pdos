@@ -2088,6 +2088,7 @@ static void cmd_save_help(void)
     printf("/I    - Interactive: read from user, not from the batch file\n");
     printf("/O    - Overwrite existing file\n");
     printf("/Q    - Quiet mode, suppress all prompts/messages\n");
+    printf("/A    - Append to file: Must be used with /O\n");
 }
 
 static void cmd_set_help(void)
