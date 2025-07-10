@@ -5681,35 +5681,38 @@ __PDPCLIB_API__ int fseek(FILE *stream, long int offset, int whence)
         char fnm[FILENAME_MAX];
         long int x;
         size_t y;
-        char buf[1000];
+        char buf[512];
 
-        oldpos = ftell(stream);
-        if (newpos < oldpos)
+        if (newpos != oldpos)
         {
-            strcpy(fnm, "dd:");
-            strcat(fnm, stream->ddname);
-            if (stream->pdsmem[0] != '\0')
+            if (newpos < oldpos)
             {
-                sprintf(fnm + strlen(fnm), "(%s)", stream->pdsmem);
+                strcpy(fnm, "dd:");
+                strcat(fnm, stream->ddname);
+                if (stream->pdsmem[0] != '\0')
+                {
+                    sprintf(fnm + strlen(fnm), "(%s)", stream->pdsmem);
+                }
+                inseek = 1;
+                if (freopen(fnm, stream->modeStr, stream) == NULL)
+                {
+                    stream->errorInd = 1;
+                    return (-1);
+                }
+                inseek = 0;
+                oldpos = 0;
             }
-            inseek = 1;
-            if (freopen(fnm, stream->modeStr, stream) == NULL)
+            y = (newpos - oldpos) % sizeof buf;
+            y = (y == 0) ? sizeof buf : y;
+            fread(buf, y, 1, stream);
+            for (x = oldpos + y; x < newpos; x += sizeof buf)
             {
-                stream->errorInd = 1;
+                fread(buf, sizeof buf, 1, stream);
+            }
+            if (stream->errorInd)
+            {
                 return (-1);
             }
-            inseek = 0;
-            oldpos = 0;
-        }
-        y = (newpos - oldpos) % sizeof buf;
-        fread(buf, y, 1, stream);
-        for (x = oldpos + y; x < newpos; x += sizeof buf)
-        {
-            fread(buf, sizeof buf, 1, stream);
-        }
-        if (stream->errorInd)
-        {
-            return (-1);
         }
     }
 #endif
@@ -7341,7 +7344,8 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
     {
         stream->mode = __WRITE_MODE;
         stream->upto = stream->fbuf;
-        stream->endbuf = stream->fbuf + stream->szfbuf;
+        /*keep value of stream->endbuf from fseek function*/
+        /*stream->endbuf = stream->fbuf + stream->szfbuf;*/
         stream->justseeked = 0;
     }
     if (stream->update)
