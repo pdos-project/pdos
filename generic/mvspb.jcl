@@ -74,12 +74,14 @@ help
 date
 type :dd:xyz
 type :dd:xyz
-exit
 type readme.txt
 type :dd:xyz
 dir
-exit
 type dd:xyz
+copy dd:xyz testcopy.txt
+dir
+type testcopy.txt
+exit
 /*
 //CONFIG   DD  *
 COMSPEC=:dd:pcomm
