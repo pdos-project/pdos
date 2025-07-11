@@ -1,10 +1,13 @@
 # This builds a pseudo-bios for CMS or MVS using binutils
+# As opposed to mfbios.bat for direct mfemul/Hercules
 
 # You need to have built PDPCLIB with pdpmvs4.bat first
 
 # Need to disable builtins because an ASCII/EBCDIC issue
 # means that it thinks there is no '%' and can use an fputs
 
+
+# You can then combine it with makefile.zpg and makecomm.zpg
 
 
 ifeq "$(targ)" "cms"
