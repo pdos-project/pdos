@@ -7127,10 +7127,6 @@ static int iread(FILE *stream, unsigned char **ptr)
         stream->eofInd = 1;
         return rc;
     }
-    if (stream->update)
-    {
-        stream->asmbuf = *ptr;
-    }
     return rc;
 }
 
@@ -7348,10 +7344,7 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
         /*stream->endbuf = stream->fbuf + stream->szfbuf;*/
         stream->justseeked = 0;
     }
-    if (stream->update)
-    {
-        iread(stream, &dptr);
-    }
+
     switch (stream->style)
     {
         case FIXED_BINARY:
@@ -7365,6 +7358,10 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
             {
                 /* ready to write a record - request some space
                    from MVS */
+                if (stream->update)
+                {
+                    iread(stream, &dptr);
+                }
                 begwrite(stream, stream->lrecl);
                 sz = stream->endbuf - stream->upto;
                 memcpy(dptr, stream->fbuf, stream->szfbuf - sz);
@@ -7379,10 +7376,28 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                number of bytes to write is still greater than the
                internal buffer. In which case, start writing directly
                to an MVS-provided area. */
+
+            int done_first=0;
             while (bytes >= stream->szfbuf)
             {
+
+                if (stream->update)
+                {  
+                    iread(stream, &dptr);
+                    if (!done_first) 
+                    {
+                        stream->asmbuf = dptr;
+                    }
+                }            
                 begwrite(stream, stream->lrecl);
+                if (done_first)
+                {
+                    memcpy(dptr + 4, ptr, stream->szfbuf);
+                } else
+                {
+                    done_first = 1;
                 memcpy(dptr, ptr, stream->szfbuf);
+                }
                 finwrite(stream);
                 ptr = (char *)ptr + stream->szfbuf;
                 bytes -= stream->szfbuf;
