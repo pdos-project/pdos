@@ -7320,6 +7320,8 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
     size_t sz;
     char *p;
     int x;
+    int done_first = 0;
+
 
     if (stream->quickBin)
     {
@@ -7348,7 +7350,6 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
     switch (stream->style)
     {
         case FIXED_BINARY:
-            int done_first=0;
             bytes = nmemb * size;
             /* if we've exceed our buffer we need to write out
                a record - but if we haven't written any data to
