@@ -5703,7 +5703,6 @@ __PDPCLIB_API__ int fseek(FILE *stream, long int offset, int whence)
                 oldpos = 0;
             }
             y = (newpos - oldpos) % sizeof buf;
-            y = (y == 0) ? sizeof buf : y;
             fread(buf, y, 1, stream);
             for (x = oldpos + y; x < newpos; x += sizeof buf)
             {
