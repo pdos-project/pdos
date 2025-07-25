@@ -7382,23 +7382,44 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
 
             while (bytes >= stream->szfbuf)
             {
-
                 if (stream->update)
-                {  
+                {
                     iread(stream, &dptr);
-                    if (!done_first) 
+                    if (!done_first)
                     {
                         stream->asmbuf = dptr;
                     }
-                }            
+                }
                 begwrite(stream, stream->lrecl);
-                if (done_first)
+                if (stream->update)
                 {
-                    memcpy(dptr + 4, ptr, stream->szfbuf);
-                } else
+                    /* for some reason - possibly a bug in mvssupa.asm
+                       or a misunderstanding of it, we have an issue.
+
+                       If we do an iread before every iwrite, we can
+                       only write 2 blocks of 512 - after that it abends.
+
+                       If we do a single iread before a series of iwrite,
+                       then the second iwrite has 4 bytes truncated. It
+                       seems that mvssupa.asm is expecting that space to
+                       be reserved for a RDW or something like that. Perhaps
+                       to give flexibility so that with RECFM=U we can write
+                       a different sized block. But it is presumably ignored
+                       for a RECFM=F.
+                    */
+                    if (done_first)
+                    {
+                        memcpy(dptr + 4, ptr, stream->szfbuf);
+                    }
+                    else
+                    {
+                        done_first = 1;
+                        memcpy(dptr, ptr, stream->szfbuf);
+                    }
+                }
+                else
                 {
-                    done_first = 1;
-                memcpy(dptr, ptr, stream->szfbuf);
+                    memcpy(dptr, ptr, stream->szfbuf);
                 }
                 finwrite(stream);
                 ptr = (char *)ptr + stream->szfbuf;
