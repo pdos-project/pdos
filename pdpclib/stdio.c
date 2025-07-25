@@ -7348,6 +7348,7 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
     switch (stream->style)
     {
         case FIXED_BINARY:
+            int done_first=0;
             bytes = nmemb * size;
             /* if we've exceed our buffer we need to write out
                a record - but if we haven't written any data to
@@ -7361,6 +7362,8 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                 if (stream->update)
                 {
                     iread(stream, &dptr);
+                    stream->asmbuf = dptr;
+                    done_first = 1;
                 }
                 begwrite(stream, stream->lrecl);
                 sz = stream->endbuf - stream->upto;
@@ -7377,7 +7380,6 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                internal buffer. In which case, start writing directly
                to an MVS-provided area. */
 
-            int done_first=0;
             while (bytes >= stream->szfbuf)
             {
 
