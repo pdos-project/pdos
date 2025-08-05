@@ -7393,7 +7393,7 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                         stream->done_first = 1;
                     } else {
                         memcpy(dptr + 4, stream->fbuf, stream->szfbuf - sz);
-                        memcpy(dptr + stream->szfbuf - sz, ptr, sz);
+                        memcpy(dptr + 4 + stream->szfbuf - sz, ptr, sz);
                     }
                 }
                 else 
