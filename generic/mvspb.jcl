@@ -51,6 +51,27 @@
 //*
 //*
 //*
+//CPYSAMPC EXEC PGM=COPYFILE,PARM='-tt dd:in dd:out'
+//SYSPRINT DD  SYSOUT=*
+//SYSTERM  DD  SYSOUT=*
+//SYSABEND DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//IN       DD  *
+#include <stdio.h>
+
+int main(void)
+{
+    printf("off to the races!\n");
+    printf("finished racing\n");
+    return (0);
+}
+/*
+//OUT      DD  DSN=&&SAMPC,DISP=(,PASS),
+// DCB=(RECFM=U,LRECL=0,BLKSIZE=6233),
+// SPACE=(CYL,(10,10)),UNIT=SYSALLDA
+//*
+//*
+//*
 //BIOS     EXEC PGM=BIOS,PARM=''
 //STEPLIB  DD  DSN=&&LOADLIB,DISP=(OLD,PASS)
 //SYSPRINT DD  SYSOUT=*
@@ -70,24 +91,14 @@
 //*
 //SYSIN    DD  *
 dd:pdos -c dd:config dd:dasd
-help
 date
-type :dd:xyz
-type :dd:xyz
-type readme.txt
-type :dd:xyz
 dir
-type dd:xyz
-copy dd:xyz TESTCOPY.TXT
-dir
-type testcopy.txt
-gccmvs --version
-copy test.c FRED.C
-type fred.c
-dir
-gccmvs -S -Os -o FRED.S fred.c
-dir
-type fred.s
+hexdump :dd:xyz
+cd \devel\pdos\pdpclib
+copy :dd:sampc pdptest.c
+pdmake -f makefile.zpg
+copy pdptest.exe \dos\pdptest.exe
+pdptest abc def
 exit
 /*
 //CONFIG   DD  *
@@ -96,6 +107,7 @@ COMSPEC=:dd:pcomm
 //XYZ      DD  *
 fred was here
 /*
+//SAMPC    DD  DSN=&&SAMPC,DISP=(OLD,PASS)
 //PCOMM    DD  DSN=&&PCOMM,DISP=(OLD,PASS)
 //* We get "dataset not found" if we try the below
 //* Apparently an MVS restriction on using temporary
