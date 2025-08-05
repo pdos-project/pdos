@@ -19,6 +19,8 @@
 
 #include "coff_bytearray.h"
 
+#include "coff_implib_compat.h"
+
 static char *no_suffix_name;
 static char *symbol_names[3];
 static size_t thunk_size;

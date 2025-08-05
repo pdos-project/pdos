@@ -36,6 +36,8 @@
 #define write_struct_IMAGE_BASE_RELOCATION wsibr
 #define write_struct_IMAGE_ARCHIVE_MEMBER_HEADER wsiamh
 #define write_struct_IMPORT_OBJECT_HEADER wsioh
+#define write_struct_symbol_table_entry wssymte
+#define write_struct_string_table_header wssth
 
 void read_struct_IMAGE_DOS_HEADER (struct IMAGE_DOS_HEADER_internal *IMAGE_DOS_HEADER_internal, const void *memory);
 void read_struct_coff_header (struct coff_header_internal *coff_header_internal, const void *memory);

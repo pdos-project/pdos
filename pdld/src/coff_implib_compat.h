@@ -8,6 +8,9 @@
  * commercial and non-commercial, without any restrictions, without
  * complying with any conditions and by any means.
  *****************************************************************************/
+
+#define coff_implib_compat_write cimpcw
+
 void coff_implib_compat_calculate (size_t *file_size_p,
                                    unsigned long *num_linker_member_offsets_p,
                                    unsigned long *linker_member_size_p);
