@@ -94,6 +94,7 @@ dd:pdos -c dd:config dd:dasd
 date
 dir
 hexdump :dd:xyz
+hexdump :dd:sampc
 cd \devel\pdos\pdpclib
 copy :dd:sampc pdptest.c
 pdmake -f makefile.zpg
