@@ -393,6 +393,7 @@ static int examine(const char **formt, FILE *fq, char *s, va_list *arg,
 #if defined(__CMS__) || defined(__MVS__)
 static void filedef(char *fdddname, char *fnm, int mymode);
 static void fdclr(char *ddname);
+static int iread(FILE *stream, unsigned char **ptr);
 #endif
 #ifdef __CMS__
 extern void __SVC202 ( char *s202parm, int *code, int *parm );
@@ -1679,6 +1680,8 @@ static void osfopen(void)
         __aopen(myfile->ddname, &mode, &myfile->recfm, &myfile->lrecl,
                 &myfile->blksize, &myfile->asmbuf, p);
 
+
+
     /* The true RECFM is not the "recfm" variable. True
        RECFM is as follows:
 
@@ -1731,6 +1734,12 @@ static void osfopen(void)
         printf("first TTR hex %x\n", data[1]);
         printf("curr TTR hex %x\n", data[2]);
         printf("max tracks decimal %u\n", data[3]);
+#endif
+#if defined(__MVS__)
+        iread(myfile, &dptr);
+        myfile->asmbuf = dptr;
+        fseek(myfile, 0, SEEK_SET);
+        myfile->done_first = 0;
 #endif
     }
 
@@ -2847,7 +2856,7 @@ __PDPCLIB_API__ size_t fread(void *ptr,
     size_t actualRead;
 
     stream = __INTFILE(stream);
-
+    
     if (nmemb == 1)
     {
         toread = size;
@@ -2869,6 +2878,7 @@ __PDPCLIB_API__ size_t fread(void *ptr,
         *--stream->upto = (char)stream->ungetCh;
         stream->ungetCh = -1;
     }
+    
     if (!stream->quickBin)
     {
         /* if we were previously writing and then
@@ -5666,14 +5676,23 @@ __PDPCLIB_API__ int fseek(FILE *stream, long int offset, int whence)
         }
 #endif
 #if defined(__MVS__) || defined(__CMS__)
-#if 0 /* defined(__MVS__)
+#if defined(__MVS__)
     if (stream->update)
     {
-        int i;
-        i = 0x200; /* TTR0 - upper 16-bits is relative track 0.
-                      next 8 bits is record 2
-                      bottom 8 bits are 0 */
-        __apoint(stream->hfile, &i);
+        unsigned int record_num;
+        unsigned int track_num;
+        unsigned int ttr;
+        
+        ttr = (newpos / stream->lrecl);
+        track_num = (ttr / stream->blocks_per_track);
+        record_num = (ttr % stream->blocks_per_track) + 1;
+        ttr = (track_num << 16) | (record_num << 8);
+        __apoint(stream->hfile, &ttr);
+
+        stream->szfbuf = stream->lrecl;
+        stream->endbuf = stream->fbuf;
+        stream->upto = stream->fbuf;
+        stream->bufStartR = newpos;
     }
     else
 #endif
@@ -7360,15 +7379,28 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                 /* ready to write a record - request some space
                    from MVS */
                 if (stream->update)
-                {
+                {    
+                    fseek(stream, stream->bufStartR, SEEK_SET);
                     iread(stream, &dptr);
-                    stream->asmbuf = dptr;
-                    done_first = 1;
                 }
                 begwrite(stream, stream->lrecl);
                 sz = stream->endbuf - stream->upto;
-                memcpy(dptr, stream->fbuf, stream->szfbuf - sz);
-                memcpy(dptr + stream->szfbuf - sz, ptr, sz);
+
+                if (stream->update) {
+                    if (!stream->done_first) {
+                        memcpy(dptr, stream->fbuf, stream->szfbuf - sz);
+                        memcpy(dptr + stream->szfbuf - sz, ptr, sz);
+                        stream->done_first = 1;
+                    } else {
+                        memcpy(dptr + 4, stream->fbuf, stream->szfbuf - sz);
+                        memcpy(dptr + stream->szfbuf - sz, ptr, sz);
+                    }
+                }
+                else 
+                {
+                    memcpy(dptr, stream->fbuf, stream->szfbuf - sz);
+                    memcpy(dptr + stream->szfbuf - sz, ptr, sz);
+                }
                 finwrite(stream);
                 ptr = (char *)ptr + sz;
                 bytes -= sz;
@@ -7383,12 +7415,9 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
             while (bytes >= stream->szfbuf)
             {
                 if (stream->update)
-                {
+                {    
+                    fseek(stream, stream->bufStartR, SEEK_SET);
                     iread(stream, &dptr);
-                    if (!done_first)
-                    {
-                        stream->asmbuf = dptr;
-                    }
                 }
                 begwrite(stream, stream->lrecl);
                 if (stream->update)
@@ -7407,14 +7436,14 @@ __PDPCLIB_API__ size_t fwrite(const void *ptr,
                        a different sized block. But it is presumably ignored
                        for a RECFM=F.
                     */
-                    if (done_first)
+                    if (!stream->done_first)
                     {
-                        memcpy(dptr + 4, ptr, stream->szfbuf);
+                        stream->done_first = 1;
+                        memcpy(dptr, ptr, stream->szfbuf);
                     }
                     else
                     {
-                        done_first = 1;
-                        memcpy(dptr, ptr, stream->szfbuf);
+                        memcpy(dptr + 4, ptr, stream->szfbuf);
                     }
                 }
                 else
@@ -7851,7 +7880,7 @@ __PDPCLIB_API__ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
         *stream->upto = stream->ungetCh;
         stream->ungetCh = -1;
     }
-
+    
     switch (stream->style)
     {
         case FIXED_TEXT:
@@ -7927,6 +7956,10 @@ __PDPCLIB_API__ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
             while (totalread < bytes)
             {
+                if (stream->update)
+                {
+                    fseek(stream, stream->bufStartR, SEEK_SET);
+                }
                 if (iread(stream, &dptr) != 0)
                 {
                     break;
