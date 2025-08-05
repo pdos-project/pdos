@@ -78,9 +78,16 @@ type readme.txt
 type :dd:xyz
 dir
 type dd:xyz
-copy dd:xyz testcopy.txt
+copy dd:xyz TESTCOPY.TXT
 dir
 type testcopy.txt
+gccmvs --version
+copy test.c FRED.C
+type fred.c
+dir
+gccmvs -S -Os -o FRED.S fred.c
+dir
+type fred.s
 exit
 /*
 //CONFIG   DD  *
