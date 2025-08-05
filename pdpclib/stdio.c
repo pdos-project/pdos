@@ -1740,6 +1740,15 @@ static void osfopen(void)
         myfile->asmbuf = dptr;
         fseek(myfile, 0, SEEK_SET);
         myfile->done_first = 0;
+        /* this done_first variable is a workaround for what is presumed
+           to be a bug in mvssupa.asm
+           The first time a write is done, the read buffer should be
+           overwritten from the beginning.
+           But all subsequent writes require the first 4 bytes to be
+           skipped. We need someone to look at the mvssupa.asm.
+           Gerhard Postpischil wrote the relevant mvssupa.asm code,
+           but he died years ago
+        */
 #endif
     }
 
