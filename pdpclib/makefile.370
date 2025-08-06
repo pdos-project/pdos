@@ -45,11 +45,11 @@ all: clean pdpclib.a
 
 pdpclib.a: stdio.o string.o stdlib.o \
        start.o time.o errno.o assert.o signal.o locale.o \
-       ctype.o setjmp.o math.o pdptest.o
+       ctype.o setjmp.o math.o pdptest.o mvssupc.o
         rm -f pdpclib.a
         $(AR) r pdpclib.a stdio.o string.o stdlib.o
         $(AR) r pdpclib.a start.o time.o errno.o assert.o signal.o
-        $(AR) r pdpclib.a locale.o ctype.o setjmp.o math.o
+        $(AR) r pdpclib.a locale.o ctype.o setjmp.o math.o mvssupc.o
         $(AR) s pdpclib.a
         $(LD) $(EXTRA1) -o pdptest.exe $(EXTRA2) pdptest.o pdpclib.a
 
