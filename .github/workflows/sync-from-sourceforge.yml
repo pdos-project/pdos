@@ -47,7 +47,6 @@ jobs:
               git checkout "$branch"
               
               # Attempt a fast-forward merge.
-              # The '|| true' ensures the script continues even if the merge fails.
               if ! git merge --ff-only "sourceforge/$branch"; then
                 # If the merge fails, it means it was not a fast-forward.
                 # We print a warning and do not perform a merge or rebase.
