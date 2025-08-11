@@ -1,0 +1,60 @@
+name: Sync from SourceForge
+
+# This workflow runs on a daily schedule at 04:00 UTC.
+# You can change the cron expression to run at a different time.
+# For example, '0 */6 * * *' would run every 6 hours.
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  # This allows you to run the workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  fast-forward-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the current repository code.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # This is necessary to fetch all branches and their history.
+          fetch-depth: 0
+          # This gives the workflow permissions to push changes back to the repository.
+          # The GITHUB_TOKEN is a temporary token with push permissions.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 2: Add the remote SourceForge repository as 'sourceforge'.
+      # The '--fetch' flag immediately fetches the remote's refs.
+      - name: Add SourceForge Remote
+        run: git remote add sourceforge https://git.code.sf.net/p/pdos/gitcode
+
+      # Step 3: Loop through all local branches and attempt a fast-forward merge.
+      - name: Fast-Forward Only Merge
+        run: |
+          echo "Starting fast-forward merge process..."
+          # Fetch all branches from the remote.
+          git fetch sourceforge --prune
+
+          # Loop through each local branch.
+          for branch in $(git branch --format='%(refname:short)'); do
+            echo "--------------------------------------------------------"
+            echo "Processing branch: $branch"
+            
+            # Switch to the branch.
+            git checkout "$branch"
+            
+            # Attempt a fast-forward merge.
+            # The '|| true' ensures the script continues even if the merge fails.
+            if ! git merge --ff-only "sourceforge/$branch"; then
+              # If the merge fails, it means it was not a fast-forward.
+              # We print a warning and do not perform a merge or rebase.
+              echo "::warning file=$branch::Could not fast-forward merge branch '$branch'. Please merge or rebase manually."
+            else
+              # If the merge succeeds, we push the changes back to GitHub.
+              echo "Fast-forward merge successful on '$branch'."
+              git push origin "$branch"
+            fi
+            
+            echo "--------------------------------------------------------"
+          done
