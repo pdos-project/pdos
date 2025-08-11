@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
           # This gives the workflow permissions to push changes back to the repository.
           # The GITHUB_TOKEN is a temporary token with push permissions.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PDOS_PROJECT_WRITE }}
 
       # Step 2: Add the remote SourceForge repository as 'sourceforge'.
       # The '--fetch' flag immediately fetches the remote's refs.
