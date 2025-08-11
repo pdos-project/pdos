@@ -38,23 +38,30 @@ jobs:
 
           # Loop through each local branch.
           for branch in $(git branch --format='%(refname:short)'); do
-            echo "--------------------------------------------------------"
-            echo "Processing branch: $branch"
-            
-            # Switch to the branch.
-            git checkout "$branch"
-            
-            # Attempt a fast-forward merge.
-            # The '|| true' ensures the script continues even if the merge fails.
-            if ! git merge --ff-only "sourceforge/$branch"; then
-              # If the merge fails, it means it was not a fast-forward.
-              # We print a warning and do not perform a merge or rebase.
-              echo "::warning file=$branch::Could not fast-forward merge branch '$branch'. Please merge or rebase manually."
+            # Check if the corresponding branch exists on the 'sourceforge' remote.
+            if git show-ref --quiet --verify "refs/remotes/sourceforge/$branch"; then
+              echo "--------------------------------------------------------"
+              echo "Processing branch: $branch"
+              
+              # Switch to the branch.
+              git checkout "$branch"
+              
+              # Attempt a fast-forward merge.
+              # The '|| true' ensures the script continues even if the merge fails.
+              if ! git merge --ff-only "sourceforge/$branch"; then
+                # If the merge fails, it means it was not a fast-forward.
+                # We print a warning and do not perform a merge or rebase.
+                echo "::warning file=$branch::Could not fast-forward merge branch '$branch'. Please merge or rebase manually."
+              else
+                # If the merge succeeds, we push the changes back to GitHub.
+                echo "Fast-forward merge successful on '$branch'."
+                git push origin "$branch"
+              fi
+              
+              echo "--------------------------------------------------------"
             else
-              # If the merge succeeds, we push the changes back to GitHub.
-              echo "Fast-forward merge successful on '$branch'."
-              git push origin "$branch"
+              echo "--------------------------------------------------------"
+              echo "Skipping branch '$branch' as it does not exist on the 'sourceforge' remote."
+              echo "--------------------------------------------------------"
             fi
-            
-            echo "--------------------------------------------------------"
           done
