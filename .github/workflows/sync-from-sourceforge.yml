@@ -17,7 +17,7 @@ jobs:
       contents: write
     
     steps:
-      # Step 1: Checkout the current repository code.
+      # Step 1: Checkout the current repository code
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -27,12 +27,20 @@ jobs:
           # The GITHUB_TOKEN is a temporary token with push permissions.
           token: ${{ github.token }}
 
-      # Step 2: Add the remote SourceForge repository as 'sourceforge'.
-      # The '--fetch' flag immediately fetches the remote's refs.
-      - name: Add SourceForge Remote
-        run: git remote add sourceforge https://git.code.sf.net/p/pdos/gitcode
+      # Step 2: Load SSH key to talk to Sourceforge
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_PDOS_SOURCEFORGE_SYNC }}
 
-      # Step 3: Loop through all local branches and attempt a fast-forward merge.
+      # Step 3: Add the remote SourceForge repository as 'sourceforge'
+      # NOTE: skissane would prefer not to use his personal SourceForge account to do this
+      # But don't know if there is a realistic alternative
+      # Does Sourceforge even support "project/group/org/bot accounts" which aren't tied to a human?
+      - name: Add SourceForge Remote
+        run: git remote add sourceforge kerravon86@git.code.sf.net:p/pdos/gitcode
+
+      # Step 4: Loop through all local branches and attempt a fast-forward merge.
       - name: Fast-Forward Only Merge
         run: |
           echo "Starting fast-forward merge process..."
