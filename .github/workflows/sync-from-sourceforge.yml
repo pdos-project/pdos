@@ -38,7 +38,7 @@ jobs:
       # But don't know if there is a realistic alternative
       # Does Sourceforge even support "project/group/org/bot accounts" which aren't tied to a human?
       - name: Add SourceForge Remote
-        run: git remote add sourceforge skissane@git.code.sf.net:p/pdos/gitcode
+        run: git remote add sourceforge kerravon86@git.code.sf.net:p/pdos/gitcode
 
       # Step 4: Loop through all local branches and attempt a fast-forward merge.
       - name: Fast-Forward Only Merge
